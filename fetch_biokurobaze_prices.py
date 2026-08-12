@@ -1,0 +1,152 @@
+import json
+import asyncio
+import re
+from playwright.async_api import async_playwright
+
+BIOKUROBAZE_URL = "https://www.biokurobaze.lt/biokuras/"
+
+async def scrape_catalog(page):
+    print(f"Scraping catalog: {BIOKUROBAZE_URL}")
+    await page.goto(BIOKUROBAZE_URL, wait_until="domcontentloaded", timeout=60000)
+    
+    try:
+        await page.wait_for_selector(".product, li.type-product", timeout=15000)
+    except Exception as e:
+        print(f"Selector timeout on catalog page: {e}")
+
+    await page.evaluate("window.scrollTo(0, document.body.scrollHeight / 2)")
+    await page.wait_for_timeout(1000)
+    await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+    await page.wait_for_timeout(1500)
+
+    items = await page.evaluate('''() => {
+        const cardElements = document.querySelectorAll('li.product, div.product');
+        const results = [];
+        
+        cardElements.forEach(card => {
+            const titleEl = card.querySelector('.woocommerce-loop-product__title, h2.woocommerce-loop-product__title, h2, h3');
+            const priceEl = card.querySelector('.price');
+            const linkEl = card.querySelector('a.woocommerce-LoopProduct-link') || card.querySelector('a');
+            
+            if (titleEl && priceEl && linkEl) {
+                let rawTitle = titleEl.innerText.trim();
+                
+                if (rawTitle.includes('BE PABRANGIMO')) {
+                    const lines = rawTitle.split('\\n').map(l => l.trim()).filter(l => l.length > 0 && !l.includes('BE PABRANGIMO'));
+                    rawTitle = lines.length > 0 ? lines[lines.length - 1] : rawTitle;
+                }
+                
+                const insPrice = card.querySelector('ins .woocommerce-Price-amount');
+                let currentPrice = insPrice ? insPrice.innerText.trim() : priceEl.innerText.trim().replace(/\\n/g, ' ');
+                
+                if (currentPrice.includes('Current price is:')) {
+                    const parts = currentPrice.split('Current price is:');
+                    currentPrice = parts[parts.length - 1].trim();
+                } else if (currentPrice.includes(' ')) {
+                    const amounts = currentPrice.split(' ').filter(p => p.includes('€'));
+                    if (amounts.length > 0) {
+                        currentPrice = amounts[amounts.length - 1].trim();
+                    }
+                }
+
+                if (rawTitle && rawTitle.length > 2) {
+                    results.push({
+                        title: rawTitle,
+                        price: currentPrice,
+                        url: linkEl.href
+                    });
+                }
+            }
+        });
+        return results;
+    }''')
+    
+    return items
+
+async def extract_product_details(page, url, title):
+    print(f"Fetching details from: {url}")
+    title_lower = title.lower()
+    
+    package_type = "Paletė"
+    if "didmaiš" in title_lower:
+        package_type = "Didmaišis"
+    elif "maišel" in title_lower or "15kg" in title_lower or "25kg" in title_lower:
+        package_type = "Maišeliai ant paletės"
+
+    exact_weight = None
+
+    try:
+        await page.goto(url, wait_until="domcontentloaded", timeout=25000)
+        
+        page_text = await page.evaluate('''() => {
+            const desc = document.querySelector('.woocommerce-product-details__short-description, #tab-description, .shop_attributes');
+            return desc ? desc.innerText : document.body.innerText;
+        }''')
+
+        weight_matches = re.findall(r'(?:bendras svoris|svoris|paletėje|yra)\s*:?\s*(\d{3,4})\s*kg', page_text, re.IGNORECASE)
+        if weight_matches:
+            exact_weight = f"{weight_matches[0]} kg"
+        else:
+            general_matches = re.findall(r'(\d{3,4})\s*kg', page_text, re.IGNORECASE)
+            if general_matches:
+                exact_weight = f"{general_matches[0]} kg"
+
+    except Exception as e:
+        print(f"Error fetching product details for {url}: {e}")
+
+    if not exact_weight:
+        if "didmaiš" in title_lower:
+            exact_weight = "1000 kg"
+        elif "1000kg" in title_lower or "1000 kg" in title_lower:
+            exact_weight = "1000 kg"
+        else:
+            exact_weight = "960 kg"
+
+    return exact_weight, package_type
+
+async def main():
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        context = await browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            locale="lt-LT",
+            viewport={'width': 1440, 'height': 900}
+        )
+        
+        page = await context.new_page()
+        all_items = await scrape_catalog(page)
+        
+        briquettes = []
+        pellets = []
+        
+        for item in all_items:
+            title_lower = item["title"].lower()
+            
+            if "briket" in title_lower or "granul" in title_lower:
+                weight, package = await extract_product_details(page, item["url"], item["title"])
+
+                enriched_item = {
+                    "title": item["title"],
+                    "price": item["price"],
+                    "weight": weight,
+                    "package": package,
+                    "url": item["url"]
+                }
+                
+                if "briket" in title_lower:
+                    briquettes.append(enriched_item)
+                elif "granul" in title_lower:
+                    pellets.append(enriched_item)
+        
+        await browser.close()
+        
+        output_data = {
+            "briquettes": briquettes,
+            "pellets": pellets
+        }
+        
+        with open("prices.json", "w", encoding="utf-8") as f:
+            json.dump(output_data, f, indent=2, ensure_ascii=False)
+
+if __name__ == "__main__":
+    asyncio.run(main())
