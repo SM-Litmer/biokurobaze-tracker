@@ -1,0 +1,48 @@
+{
+  "briquettes": [
+    {
+      "title": "Nestro briketai – užsakoma telefonu",
+      "price": "400,00 €",
+      "weight": "960 kg",
+      "package": "Paletė",
+      "url": "https://www.biokurobaze.lt/produktas/nestro-briketai-uzsakoma-telefonu/"
+    },
+    {
+      "title": "Durpių briketai",
+      "price": "325,00 €",
+      "weight": "960 kg",
+      "package": "Paletė",
+      "url": "https://www.biokurobaze.lt/produktas/durpiu-briketai/"
+    },
+    {
+      "title": "Spygliuočių medienos briketai – užsakymai telefonu",
+      "price": "370,00 €",
+      "weight": "960 kg",
+      "package": "Paletė",
+      "url": "https://www.biokurobaze.lt/produktas/spygliuociu-medienos-briketai-uzsakymai-telefonu/"
+    },
+    {
+      "title": "Mišrūs medžio pjuvenų briketai",
+      "price": "380,00 €",
+      "weight": "960 kg",
+      "package": "Paletė",
+      "url": "https://www.biokurobaze.lt/produktas/misrus-lapuocio-pjuvenu-briketai-uzsakymai-telefonu/"
+    },
+    {
+      "title": "Beržo briketai",
+      "price": "390,00 €",
+      "weight": "960 kg",
+      "package": "Paletė",
+      "url": "https://www.biokurobaze.lt/produktas/pjuvenu-briketai/"
+    }
+  ],
+  "pellets": [
+    {
+      "title": "Medžio pjuvenų granulės",
+      "price": "525,00 €",
+      "weight": "960 kg",
+      "package": "Paletė",
+      "url": "https://www.biokurobaze.lt/produktas/medzio-pjuvenu-granules/"
+    }
+  ]
+}
