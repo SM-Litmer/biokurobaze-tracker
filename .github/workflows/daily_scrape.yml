@@ -2,7 +2,7 @@ name: Daily Biokuro Baze Price Update
 
 on:
   schedule:
-    - cron: '0 3 * * *'  # Runs daily at 06:00 AM Lithuanian Time (03:00 UTC)
+    - cron: '0 3 * * *'  # Runs daily at 03:00 UTC
   workflow_dispatch:      # Allows manual triggers anytime
 
 jobs:
