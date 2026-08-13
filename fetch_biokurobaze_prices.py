@@ -1,6 +1,7 @@
 import json
 import asyncio
 import re
+from datetime import datetime, timezone
 from playwright.async_api import async_playwright
 
 BIOKUROBAZE_URL = "https://www.biokurobaze.lt/biokuras/"
@@ -140,7 +141,11 @@ async def main():
         
         await browser.close()
         
+        # Include ISO timestamp in UTC
+        current_time_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        
         output_data = {
+            "last_updated": current_time_iso,
             "briquettes": briquettes,
             "pellets": pellets
         }
