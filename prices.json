@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-11-19T11:25:39Z",
+  "last_updated": "2026-11-20T11:15:42Z",
   "briquettes": [
     {
       "title": "Nestro briketai – užsakoma telefonu",
@@ -35,6 +35,13 @@
       "weight": "960 kg",
       "package": "Paletė",
       "url": "https://www.biokurobaze.lt/produktas/pjuvenu-briketai/"
+    },
+    {
+      "title": "Lignino briketai",
+      "price": "290,00 €",
+      "weight": "960 kg",
+      "package": "Paletė",
+      "url": "https://www.biokurobaze.lt/produktas/lignino-briketai/"
     }
   ],
   "pellets": [
